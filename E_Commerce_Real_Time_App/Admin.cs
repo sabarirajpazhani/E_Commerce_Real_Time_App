@@ -636,7 +636,40 @@ namespace E_Commerce_RealTime_App
                         break;
 
 
-                    
+                    case 3:
+                        Console.ForegroundColor = ConsoleColor.Magenta;
+                        Console.WriteLine("                          You have selected option '3' to Delete thee Products                         ");
+                        Console.ResetColor();
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.WriteLine("-------------------------------------------------------------------------------------------------------");
+                        Console.ResetColor();
+                        Console.WriteLine();
+
+
+                        Console.ForegroundColor = ConsoleColor.Magenta;
+                        Console.WriteLine("                                   ------- Here the Products -------                                 ");
+                        Console.ResetColor();
+                        Console.WriteLine();
+
+                        _E_CommerceMethods.DisplayAllProducts(ProductDetails);
+
+                        Console.WriteLine();
+
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write("Enter the Product ID for Delete : ");
+                        Console.ResetColor();
+                        int ProductID = int.Parse(Console.ReadLine());  
+                        Console.WriteLine();
+
+                        ProductDetails.Remove(ProductID);
+
+                        Console.ForegroundColor = ConsoleColor.Blue;
+                        Console.WriteLine($"Product ID - {ProductID} has been Successfully Deleted");
+                        Console.ResetColor();
+                        Console.WriteLine();
+
+                        break;
 
 
 
@@ -658,6 +691,26 @@ namespace E_Commerce_RealTime_App
                         _E_CommerceMethods.DisplayAllProducts(ProductDetails);
 
                         break;
+
+
+
+
+
+
+
+                    case 6:
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
+                        Console.WriteLine("Thank You Admin!!!");
+                        Console.ResetColor();
+                        Console.WriteLine();
+
+                        break;
+                }
+
+                if(Choice == 6)
+                {
+                    return;
                 }
 
             }

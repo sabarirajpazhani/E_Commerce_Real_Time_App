@@ -12,8 +12,16 @@ namespace E_Commerce_RealTime_App
             while (true)
             {
                 Console.WriteLine();
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine("======================================= ** E - Commerce System ** =====================================");
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.Write("======================================= ");
+                Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.Write("** E - Commerce System ** ");
+                Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine("=====================================");
+                Console.ResetColor();
+                
                 Console.ResetColor();
                 Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.Yellow;
@@ -23,7 +31,7 @@ namespace E_Commerce_RealTime_App
                 Console.WriteLine("                                            4. Exit                                                    ");
                 Console.ResetColor();
                 Console.WriteLine();
-                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("=======================================================================================================");
                 Console.ResetColor();
                 Console.WriteLine();

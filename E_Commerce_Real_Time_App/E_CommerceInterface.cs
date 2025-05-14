@@ -39,6 +39,8 @@ namespace E_Commerce_Console_App_RealTime
 
         public void DisplayAllProducts(Hashtable ProductDetails)
         {
+            var SortedProducts = ProductDetails.Cast<DictionaryEntry>().OrderBy(x => x.Key);
+
             Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.WriteLine("-------------------------------------------------------------------------------------------------------");
             Console.ResetColor();
@@ -54,7 +56,7 @@ namespace E_Commerce_Console_App_RealTime
             Console.WriteLine();
             Console.ResetColor();
 
-            foreach (DictionaryEntry i in ProductDetails)
+            foreach (DictionaryEntry i in SortedProducts)
             {
                 var _Product = (Product)i.Value;
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
