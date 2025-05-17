@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using E_Commerce_Console_App_RealTime;
 
 namespace E_Commerce_RealTime_App
@@ -21,7 +22,7 @@ namespace E_Commerce_RealTime_App
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("=====================================");
                 Console.ResetColor();
-                
+
                 Console.ResetColor();
                 Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.Yellow;
@@ -87,6 +88,16 @@ namespace E_Commerce_RealTime_App
                     case 1:
                         _E_CommerceMethod.AdminLogin();
                         break;
+
+                    case 2:
+                        _E_CommerceMethod.UserLogin();
+                        break;
+
+                    case 3:
+                        _E_CommerceMethod.UserRegistration();
+                        break;
+
+
                 }
 
             }
