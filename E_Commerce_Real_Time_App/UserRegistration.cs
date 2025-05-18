@@ -67,7 +67,7 @@ namespace E_Commerce_RealTime_App
 
     class RegisterUser : UserPanel
     {
-        public static string userRegisterFilePath = @"D:\FileHandling\E_Commerce\User_Registration.txt";
+        public static string userRegisterFilePath = @"D:\File_Handling\E-Commerce\User_Registration.txt";
 
         public static int userID = 100;
 

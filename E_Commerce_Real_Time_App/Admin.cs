@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using E_Commerce_Console_App_RealTime;
-using E_Commerce_RealTime_App.Exceptions;
 
 namespace E_Commerce_RealTime_App
 {

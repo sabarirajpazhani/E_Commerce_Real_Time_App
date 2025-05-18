@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Numerics;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -19,6 +21,7 @@ namespace E_Commerce_RealTime_App
         public int ProductPrice { get; set; }
         public int Quantity { get; set; }
         public int TotalPrice { get; set; }
+        public int UserID { get; set; }
         public string UserName { get; set; }
         public string UserEmail { get; set; }
         public long UserPhone { get; set; }
@@ -28,7 +31,7 @@ namespace E_Commerce_RealTime_App
 
         public DateOnly OrderedDate { get; private set; }
         public DateOnly DeliveryDate { get; private set; }
-        public OrderProduct(int orderID, int productId, string productName, int productPrice, int quantity, int totalPrice, string userName, string userEmail, long userPhone, string address, string paymentMethod, string transactionID)
+        public OrderProduct(int orderID, int productId, string productName, int productPrice, int quantity, int totalPrice, int userID, string userName, string userEmail, long userPhone, string address, string paymentMethod, string transactionID)
         {
             OrderID = orderID;
             ProductId = productId;
@@ -36,15 +39,27 @@ namespace E_Commerce_RealTime_App
             ProductPrice = productPrice;
             Quantity = quantity;
             TotalPrice = totalPrice;
+            UserID = userID;
             UserName = userName;
             UserEmail = userEmail;
             UserPhone = userPhone;
             Address = address;
             PaymentMethod = paymentMethod;
             TransactionID = transactionID;
+
+        }
+        public OrderProduct(int productId, string productName, int productPrice, int quantity, int totalPrice,int userID)
+        {
+            ProductId = productId;
+            ProductName = productName;
+            ProductPrice = productPrice;
+            Quantity = quantity;
+            TotalPrice = totalPrice;
+            UserID = userID;
+
         }
 
-        public void DisplayBillOfOrder(int orderID, int productId, string productName, int productPrice, int quantity, int totalPrice, string userName, string userEmail, long userPhone, string address, string paymentMethod, string transactionID)
+        public void DisplayBillOfOrder(int orderID, int productId, string productName, int productPrice, int quantity, int totalPrice,int userID, string userName, string userEmail, long userPhone, string address, string paymentMethod, string transactionID)
         {
             Console.WriteLine();
             Console.ForegroundColor = ConsoleColor.Red;
@@ -101,6 +116,10 @@ namespace E_Commerce_RealTime_App
             Console.WriteLine();
 
 
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.Write("                                        User ID c      : ");
+            Console.ResetColor();
+            Console.WriteLine(userID);
 
             Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.Write("                                        User Name      : ");
@@ -150,12 +169,12 @@ namespace E_Commerce_RealTime_App
             Console.ResetColor();
             Console.WriteLine();
 
-            AddOrderInData(orderID, productId, productName, productPrice, quantity, totalPrice, userName, userEmail, userPhone, address, paymentMethod, OrderedDate, DeliveryDate, transactionID);
+            AddOrderInData(orderID, productId, productName, productPrice, quantity, totalPrice,userID, userName, userEmail, userPhone, address, paymentMethod, OrderedDate, DeliveryDate, transactionID);
         }
 
-        public void AddOrderInData(int orderID, int productId, string productName, int productPrice, int quantity, int totalPrice, string userName, string userEmail, long userPhone, string address, string paymentMethod, DateOnly OrderedDate, DateOnly DeliveryDate, string transactionID)
+        public void AddOrderInData(int orderID, int productId, string productName, int productPrice, int quantity, int totalPrice,int userID, string userName, string userEmail, long userPhone, string address, string paymentMethod, DateOnly OrderedDate, DateOnly DeliveryDate, string transactionID)
         {
-            string OrderedData = $"{orderID},{productId},{productName},{productPrice},{quantity},{totalPrice},{userName},{userEmail},{userPhone},{address},{paymentMethod},{transactionID},{OrderedDate:dd-MM-yyyy},{DeliveryDate:dd-MM-yyyy}";
+            string OrderedData = $"{orderID},{productId},{productName},{productPrice},{quantity},{totalPrice},{userID},{userName},{userEmail},{userPhone},{address},{paymentMethod},{transactionID},{OrderedDate:dd-MM-yyyy},{DeliveryDate:dd-MM-yyyy}";
 
             File.AppendAllText(User.UserOrderFilePath, OrderedData + Environment.NewLine);
 
@@ -163,15 +182,89 @@ namespace E_Commerce_RealTime_App
 
     }
 
+    class CartProducts : OrderProduct
+    {
+
+        public CartProducts(int userId,int productId, string productName, int productPrice, int quantity, int totalPrice)
+            : base(productId, productName, productPrice, quantity, totalPrice,userId)
+        {
+
+        }
+
+        public void AddCartDataToFile(int userId, int productId, string productName, int productPrice, int quantity, int totalPrice)
+        {
+
+            string CartData = $"{productId},{productName},{productPrice},{quantity},{totalPrice},{userId}";
+
+            string cartFileName = $"{userId}.txt";
+            string cartFilePath = Path.Combine(User.CartDataDirectory, cartFileName);
+
+            int TotalPrice = 0;
+
+
+            if (!Directory.Exists(User.CartDataDirectory))
+            {
+                Directory.CreateDirectory(User.CartDataDirectory);
+            }
+
+            if (!File.Exists(cartFilePath))
+            {
+                string cartData = $"{productId},{productName},{productPrice},{quantity},{totalPrice}";
+                File.AppendAllText(cartFilePath, cartData + Environment.NewLine);
+                return;
+            }   
+
+            List<string> updatedLines = new List<string>();
+            bool productFound = false;
+
+            foreach (string line in File.ReadAllLines(cartFilePath))
+            {
+                string[] parts = line.Split(',');
+
+                if (parts[0] == productId.ToString() && parts[1] == productName)
+                {
+                    int existingQuantity = int.Parse(parts[3]);
+                    int newQuantity = existingQuantity + quantity;
+                    parts[3] = newQuantity.ToString();
+
+                    int existingTotal = int.Parse(parts[4]);
+                    int newTotal = existingTotal + totalPrice;
+                    parts[4] = newTotal.ToString();
+
+                    productFound = true;
+                }
+
+                updatedLines.Add(string.Join(",", parts));
+            }
+
+
+            if (!productFound)
+            {
+                string newProductLine = $"{productId},{productName},{productPrice},{quantity},{totalPrice}";
+                updatedLines.Add(newProductLine);
+            }
+
+
+            File.WriteAllLines(cartFilePath, updatedLines);
+        }
+    }
+
+
     internal class User
     {
 
 
-        public static string UserOrderFilePath = @"D:\FileHandling\E_Commerce\OrderUserData\UserOrdedData.txt";
+        public static string UserOrderFilePath = @"D:\File_Handling\E-Commerce\OrderUserData\UserOrdedData.txt";
+
+        //public static string CartDataFilePath = @"D:\File_Handling\E-Commerce\CartData.txt";
+        public static string CartDataDirectory = @"D:\File_Handling\E-Commerce\CartData";
 
         public static Hashtable Order = new Hashtable();
+
+        public static Hashtable CartTotalPrice = new Hashtable();
+
         public static int OrderID = 1000;
-        public void UserProduct(string UserNameOrder, string UserEmailOrder)
+        public void UserProduct(int userID, string UserNameOrder, string UserEmailOrder)
         {
             while (true)
             {
@@ -246,6 +339,7 @@ namespace E_Commerce_RealTime_App
                         Console.ResetColor();
                         Console.WriteLine();
 
+                        Product:
                         Console.ForegroundColor = ConsoleColor.Magenta;
                         Console.WriteLine("                                          List Of Products                                             ");
                         Console.ResetColor();
@@ -386,6 +480,11 @@ namespace E_Commerce_RealTime_App
 
                             int totalAmount = 0;
 
+
+
+
+
+
                             Console.WriteLine();
                             Console.ForegroundColor = ConsoleColor.DarkYellow;
                             Console.WriteLine("                                    -------- Choice the Option --------                                ");
@@ -403,6 +502,8 @@ namespace E_Commerce_RealTime_App
                             Console.Write("Enter the Choice : ");
                             Console.ResetColor();
                             int choice = int.Parse(Console.ReadLine());
+
+                            Product product = (Product)Admin.ProductDetails[productId];
 
                             if (choice == 0)
                             {
@@ -427,7 +528,7 @@ namespace E_Commerce_RealTime_App
                                 Console.ResetColor();
                                 Console.WriteLine();
 
-                                Product product = (Product)Admin.ProductDetails[productId];
+                                
                                 //var product = (Product) Admin.ProductDetails[i];
 
                                 Console.ForegroundColor = ConsoleColor.Magenta;
@@ -653,37 +754,42 @@ namespace E_Commerce_RealTime_App
                                         Console.ResetColor();
                                         Console.WriteLine();
 
-                                        Console.ForegroundColor = ConsoleColor.DarkGreen;
-                                        Console.Write("Enter Card Number (16 Digits): ");
+                                        Console.WriteLine();
+                                        Console.ForegroundColor = ConsoleColor.Red;
+                                        Console.Write("Total Amount : ");
                                         Console.ResetColor();
-                                        string cardNumber = Console.ReadLine();
-                                        Console.WriteLine();
-
-                                        Console.ForegroundColor = ConsoleColor.DarkGreen;
-                                        Console.Write("Enter CVV (Card Verification Value) (6 Digits): ");
+                                        Console.ForegroundColor = ConsoleColor.Yellow;
+                                        Console.WriteLine(totalAmount);
                                         Console.ResetColor();
-                                        string cardCVV = Console.ReadLine();
                                         Console.WriteLine();
 
-                                        PaymentMethod = "Credit Card";
-
-
-                                        Console.WriteLine();
-
-                                        TransactionID = $"TXN-{DateTime.Now:yyyyddMMHHmmssfff}-{new Random().Next(1000, 9999)}";
-
-                                        OrderProduct orderProduct = new OrderProduct(OrderID, productId, ProductName, productPrice, quantity, totalAmount, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
-
-                                        orderProduct.DisplayBillOfOrder(OrderID, productId, ProductName, productPrice, quantity, totalAmount, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
                                     Amount:
                                         Console.ForegroundColor = ConsoleColor.Yellow;
-                                        Console.Write("Enter the Amount : ");
+                                        Console.Write("Enter the Amount for Pay : ");
                                         Console.ResetColor();
                                         Console.ForegroundColor = ConsoleColor.DarkRed;
                                         Amount = int.Parse(Console.ReadLine());
                                         Console.ResetColor();
                                         if (Amount == totalAmount)
                                         {
+
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.Write("Enter Card Number (16 Digits): ");
+                                            Console.ResetColor();
+                                            string cardNumber = Console.ReadLine();
+                                            Console.WriteLine();
+
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.Write("Enter CVV (Card Verification Value) (6 Digits): ");
+                                            Console.ResetColor();
+                                            string cardCVV = Console.ReadLine();
+                                            Console.WriteLine();
+
+                                            PaymentMethod = "Credit Card";
+
+
+
+
                                             Console.WriteLine();
                                             Console.ForegroundColor = ConsoleColor.Blue;
                                             Console.WriteLine("Payment Successful using Credit Card!");
@@ -698,6 +804,16 @@ namespace E_Commerce_RealTime_App
                                             goto Amount;
                                         }
 
+
+                                        Console.WriteLine();
+
+                                        TransactionID = $"TXN-{DateTime.Now:yyyyddMMHHmmssfff}-{new Random().Next(1000, 9999)}";
+
+                                        OrderProduct orderProduct = new OrderProduct(OrderID, productId, ProductName, productPrice, quantity, totalAmount,userID, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
+
+                                        orderProduct.DisplayBillOfOrder(OrderID, productId, ProductName, productPrice, quantity, totalAmount,userID, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
+                                    
+
                                     }
                                     else if (PaymentChoice == 2)
                                     {
@@ -707,41 +823,42 @@ namespace E_Commerce_RealTime_App
                                         Console.ResetColor();
                                         Console.WriteLine();
 
-                                        Console.ForegroundColor = ConsoleColor.DarkGreen;
-                                        Console.Write("Enter Card Number (16 Digits): ");
+                                        Console.WriteLine();
+                                        Console.ForegroundColor = ConsoleColor.Red;
+                                        Console.Write("Total Amount : ");
                                         Console.ResetColor();
-                                        string cardNumber = Console.ReadLine();
-                                        Console.WriteLine();
-
-                                        Console.ForegroundColor = ConsoleColor.DarkYellow;
-                                        Console.Write("Enter CVV (Card Verification Value) (6 Digits): ");
+                                        Console.ForegroundColor = ConsoleColor.Yellow;
+                                        Console.WriteLine(totalAmount);
                                         Console.ResetColor();
-                                        string cardCVV = Console.ReadLine();
                                         Console.WriteLine();
-
-                                        PaymentMethod = "Debit Card";
-
-
-                                        Console.WriteLine();
-
-                                        TransactionID = $"TXN-{DateTime.Now:yyyyddMMHHmmssfff}-{new Random().Next(1000, 9999)}";
-
-                                        OrderProduct orderProduct = new OrderProduct(OrderID, productId, ProductName, productPrice, quantity, totalAmount, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
-
-                                        orderProduct.DisplayBillOfOrder(OrderID, productId, ProductName, productPrice, quantity, totalAmount, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
 
                                     Amount:
                                         Console.ForegroundColor = ConsoleColor.Yellow;
-                                        Console.Write("Enter the Amount : ");
+                                        Console.Write("Enter the Amount for Pay : ");
                                         Console.ResetColor();
                                         Console.ForegroundColor = ConsoleColor.DarkRed;
                                         Amount = int.Parse(Console.ReadLine());
                                         Console.ResetColor();
                                         if (Amount == totalAmount)
                                         {
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.Write("Enter Card Number (16 Digits): ");
+                                            Console.ResetColor();
+                                            string cardNumber = Console.ReadLine();
+                                            Console.WriteLine();
+
+                                            Console.ForegroundColor = ConsoleColor.DarkYellow;
+                                            Console.Write("Enter CVV (Card Verification Value) (6 Digits): ");
+                                            Console.ResetColor();
+                                            string cardCVV = Console.ReadLine();
+                                            Console.WriteLine();
+
+                                            PaymentMethod = "Debit Card";
+
+
                                             Console.WriteLine();
                                             Console.ForegroundColor = ConsoleColor.Blue;
-                                            Console.WriteLine("Payment Successful using Debit Card!");
+                                            Console.WriteLine("Payment Successful using Credit Card!");
                                             Console.ResetColor();
                                         }
                                         else
@@ -753,6 +870,17 @@ namespace E_Commerce_RealTime_App
                                             goto Amount;
                                         }
 
+                                       
+
+                                        Console.WriteLine();
+
+                                        TransactionID = $"TXN-{DateTime.Now:yyyyddMMHHmmssfff}-{new Random().Next(1000, 9999)}";
+
+                                        OrderProduct orderProduct = new OrderProduct(OrderID, productId, ProductName, productPrice, quantity, totalAmount,userID, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
+
+                                        orderProduct.DisplayBillOfOrder(OrderID, productId, ProductName, productPrice, quantity, totalAmount,userID, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
+
+                                    
                                     }
                                     else if (PaymentChoice == 3)
                                     {
@@ -762,53 +890,54 @@ namespace E_Commerce_RealTime_App
                                         Console.ResetColor();
                                         Console.WriteLine();
 
-                                        Console.ForegroundColor = ConsoleColor.DarkGreen;
-                                        Console.Write("Enter your Bank Name         : ");
+                                        Console.WriteLine();
+                                        Console.ForegroundColor = ConsoleColor.Red;
+                                        Console.Write("Total Amount : ");
                                         Console.ResetColor();
-                                        string BanName = Console.ReadLine();
-                                        Console.WriteLine();
-
-                                        Console.ForegroundColor = ConsoleColor.DarkGreen;
-                                        Console.Write("Enter your Account Number    : ");
+                                        Console.ForegroundColor = ConsoleColor.Yellow;
+                                        Console.WriteLine(totalAmount);
                                         Console.ResetColor();
-                                        string ACNumber = Console.ReadLine();
                                         Console.WriteLine();
-
-                                        Console.ForegroundColor = ConsoleColor.DarkGreen;
-                                        Console.Write("Enter your IFSC Code         : ");
-                                        Console.ResetColor();
-                                        string ifscCode = Console.ReadLine();
-                                        Console.WriteLine();
-
-                                        Console.ForegroundColor = ConsoleColor.DarkYellow;
-                                        Console.Write("Enter Password (6 Digits)    : ");
-                                        Console.ResetColor();
-                                        string cardCVV = Console.ReadLine();
-                                        Console.WriteLine();
-
-                                        PaymentMethod = "Net Banking";
-
-
-                                        Console.WriteLine();
-
-                                        TransactionID = $"TXN-{DateTime.Now:yyyyddMMHHmmssfff}-{new Random().Next(1000, 9999)}";
-
-                                        OrderProduct orderProduct = new OrderProduct(OrderID, productId, ProductName, productPrice, quantity, totalAmount, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
-
-                                        orderProduct.DisplayBillOfOrder(OrderID, productId, ProductName, productPrice, quantity, totalAmount, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
 
                                     Amount:
                                         Console.ForegroundColor = ConsoleColor.Yellow;
-                                        Console.Write("Enter the Amount : ");
+                                        Console.Write("Enter the Amount for Pay : ");
                                         Console.ResetColor();
                                         Console.ForegroundColor = ConsoleColor.DarkRed;
                                         Amount = int.Parse(Console.ReadLine());
                                         Console.ResetColor();
                                         if (Amount == totalAmount)
                                         {
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.Write("Enter your Bank Name         : ");
+                                            Console.ResetColor();
+                                            string BanName = Console.ReadLine();
+                                            Console.WriteLine();
+
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.Write("Enter your Account Number    : ");
+                                            Console.ResetColor();
+                                            string ACNumber = Console.ReadLine();
+                                            Console.WriteLine();
+
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.Write("Enter your IFSC Code         : ");
+                                            Console.ResetColor();
+                                            string ifscCode = Console.ReadLine();
+                                            Console.WriteLine();
+
+                                            Console.ForegroundColor = ConsoleColor.DarkYellow;
+                                            Console.Write("Enter Password (6 Digits)    : ");
+                                            Console.ResetColor();
+                                            string cardCVV = Console.ReadLine();
+                                            Console.WriteLine();
+
+                                            PaymentMethod = "Net Banking";
+
+
                                             Console.WriteLine();
                                             Console.ForegroundColor = ConsoleColor.Blue;
-                                            Console.WriteLine("Payment Successful using Net Banking!");
+                                            Console.WriteLine("Payment Successful using Credit Card!");
                                             Console.ResetColor();
                                         }
                                         else
@@ -819,6 +948,18 @@ namespace E_Commerce_RealTime_App
                                             Console.WriteLine();
                                             goto Amount;
                                         }
+
+                                        
+
+                                        Console.WriteLine();
+
+                                        TransactionID = $"TXN-{DateTime.Now:yyyyddMMHHmmssfff}-{new Random().Next(1000, 9999)}";
+
+                                        OrderProduct orderProduct = new OrderProduct(OrderID, productId, ProductName, productPrice, quantity, totalAmount,userID, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
+
+                                        orderProduct.DisplayBillOfOrder(OrderID, productId, ProductName, productPrice, quantity, totalAmount,userID, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
+
+                                    
 
                                     }
                                     else if (PaymentChoice == 4)
@@ -829,42 +970,44 @@ namespace E_Commerce_RealTime_App
                                         Console.ResetColor();
                                         Console.WriteLine();
 
-                                        Console.ForegroundColor = ConsoleColor.DarkGreen;
-                                        Console.Write("Enter your UPI ID (e.g., user.id@bank)  : ");
+                                        Console.WriteLine();
+                                        Console.ForegroundColor = ConsoleColor.Red;
+                                        Console.Write("Total Amount : ");
                                         Console.ResetColor();
-                                        string UPIid = Console.ReadLine();
-                                        Console.WriteLine();
-
-
-                                        Console.ForegroundColor = ConsoleColor.DarkYellow;
-                                        Console.Write("Enter your UPI Pin (6 Digits): ");
+                                        Console.ForegroundColor = ConsoleColor.Yellow;
+                                        Console.WriteLine(totalAmount);
                                         Console.ResetColor();
-                                        string upiPin = Console.ReadLine();
                                         Console.WriteLine();
-
-                                        PaymentMethod = "UPI";
-
-
-                                        Console.WriteLine();
-
-                                        TransactionID = $"TXN-{DateTime.Now:yyyyddMMHHmmssfff}-{new Random().Next(1000, 9999)}";
-
-                                        OrderProduct orderProduct = new OrderProduct(OrderID, productId, ProductName, productPrice, quantity, totalAmount, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
-
-                                        orderProduct.DisplayBillOfOrder(OrderID, productId, ProductName, productPrice, quantity, totalAmount, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
 
                                     Amount:
                                         Console.ForegroundColor = ConsoleColor.Yellow;
-                                        Console.Write("Enter the Amount : ");
+                                        Console.Write("Enter the Amount for Pay : ");
                                         Console.ResetColor();
                                         Console.ForegroundColor = ConsoleColor.DarkRed;
                                         Amount = int.Parse(Console.ReadLine());
                                         Console.ResetColor();
                                         if (Amount == totalAmount)
                                         {
+
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.Write("Enter your UPI ID (e.g., user.id@bank)  : ");
+                                            Console.ResetColor();
+                                            string UPIid = Console.ReadLine();
+                                            Console.WriteLine();
+
+
+                                            Console.ForegroundColor = ConsoleColor.DarkYellow;
+                                            Console.Write("Enter your UPI Pin (6 Digits): ");
+                                            Console.ResetColor();
+                                            string upiPin = Console.ReadLine();
+                                            Console.WriteLine();
+
+                                            PaymentMethod = "UPI";
+
+
                                             Console.WriteLine();
                                             Console.ForegroundColor = ConsoleColor.Blue;
-                                            Console.WriteLine("Payment Successful using UPI!");
+                                            Console.WriteLine("Payment Successful using Credit Card!");
                                             Console.ResetColor();
                                         }
                                         else
@@ -876,6 +1019,16 @@ namespace E_Commerce_RealTime_App
                                             goto Amount;
                                         }
 
+
+                                        Console.WriteLine();
+
+                                        TransactionID = $"TXN-{DateTime.Now:yyyyddMMHHmmssfff}-{new Random().Next(1000, 9999)}";
+
+                                        OrderProduct orderProduct = new OrderProduct(OrderID, productId, ProductName, productPrice, quantity, totalAmount,userID, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
+
+                                        orderProduct.DisplayBillOfOrder(OrderID, productId, ProductName, productPrice, quantity, totalAmount,userID, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
+
+                                    
                                     }
                                     else if (PaymentChoice == 5)
                                     {
@@ -992,9 +1145,9 @@ namespace E_Commerce_RealTime_App
 
                                         TransactionID = "Nill";
 
-                                        OrderProduct orderProduct = new OrderProduct(OrderID, productId, ProductName, productPrice, quantity, totalAmount, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
+                                        OrderProduct orderProduct = new OrderProduct(OrderID, productId, ProductName, productPrice, quantity, totalAmount,userID, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
 
-                                        orderProduct.DisplayBillOfOrder(OrderID, productId, ProductName, productPrice, quantity, totalAmount, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
+                                        orderProduct.DisplayBillOfOrder(OrderID, productId, ProductName, productPrice, quantity, totalAmount,userID, UserName, UserEmail, UserPhone, Address, PaymentMethod, TransactionID);
 
                                     }
 
@@ -1015,21 +1168,62 @@ namespace E_Commerce_RealTime_App
                                 }
                             }
 
-                            else if (Choice == 2)
+                            else if (choice == 2)
                             {
-                                Console.ForegroundColor = ConsoleColor.Yellow;
-                                Console.WriteLine("                                -------- ** Product Card ** --------                                   ");
+                                Console.WriteLine();
+                                int cartProductID = productId;
+                                string cartProductName = product.ProductName;
+                                int cartProductPrice = product.ProductPrice;
+                                int cartQuantity = quantity;
+                                int cartTotalPrice = cartProductPrice * quantity;
+
+                                CartProducts cart = new CartProducts(userID, cartProductID, cartProductName, cartProductPrice, cartQuantity, cartTotalPrice);
+
+                                // Add to user's cart file
+                                cart.AddCartDataToFile(userID, cartProductID, cartProductName, cartProductPrice, cartQuantity, cartTotalPrice);
+
+                                // Update total price in dictionary
+                                if (CartTotalPrice.Contains(cartProductName))
+                                {
+                                    CartTotalPrice[cartProductName] = (int)CartTotalPrice[cartProductName] + cartTotalPrice;
+                                }
+                                else
+                                {
+                                    CartTotalPrice[cartProductName] = cartTotalPrice;
+                                }
+
+                                Console.WriteLine();
+                                Console.ForegroundColor = ConsoleColor.Blue;
+                                Console.WriteLine($"{cartProductName} is Successfully Added to Cart !");
                                 Console.ResetColor();
+                                Console.WriteLine();
+                                Console.ForegroundColor = ConsoleColor.Green;
+                                Console.Write("If you want to Continue Purchasing (Y/N) : ");
+                                Console.ResetColor();
+                                char ch = char.Parse(Console.ReadLine());
 
-
-
-
-
-
-
-
-
+                                if (ch == 'y' || ch == 'Y')
+                                {
+                                    goto Product;
+                                }
+                                else if (ch == 'n' || ch == 'N')
+                                {
+                                    Console.WriteLine();
+                                    Console.ForegroundColor = ConsoleColor.Magenta;
+                                    Console.WriteLine("Thank You....!!");
+                                    Console.ResetColor();
+                                    Console.WriteLine();
+                                }
+                                else
+                                {
+                                    Console.WriteLine();
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine("Enter the Decision Properly");
+                                    Console.ResetColor();
+                                    Console.WriteLine();
+                                }
                             }
+
 
                         }
                         catch (FormatException e)
@@ -1071,27 +1265,104 @@ namespace E_Commerce_RealTime_App
 
                         Console.WriteLine();
                         Console.ForegroundColor = ConsoleColor.DarkGreen;
-                        Console.WriteLine("User Name : ");
+                        Console.Write("User ID    : ");
+                        Console.ResetColor();
+                        Console.WriteLine(userID);
+
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.DarkGreen;
+                        Console.Write("User Name  : ");
                         Console.ResetColor();
                         Console.WriteLine(UserNameOrder);
+
+                        Console.WriteLine();
                         Console.ForegroundColor = ConsoleColor.DarkGreen;
-                        Console.WriteLine("User Eamil : ");
+                        Console.Write("User Eamil : ");
                         Console.ResetColor();
                         Console.WriteLine(UserEmailOrder);
                         Console.WriteLine();
-
                         Console.ForegroundColor = ConsoleColor.DarkYellow;
-                        Console.WriteLine("-------------------------------------------------------------------------------------------------------");
+                        Console.WriteLine(new string('-', 125));
                         Console.ResetColor();
+
                         Console.WriteLine(
-                            $"{"Product ID",-15}" +
+                            $"{"Order ID",-12}" +
+                            $"{"Product ID",-13}" +
                             $"{"Product Name",-25}" +
-                            $"{"Product Category",-25}" +
-                            $"{"Total Price",-20}" +
-                            $"{"Product Stock",-15}"
+                            $"{"Quantity",-10}" +
+                            $"{"Total Price",-14}" +
+                            $"{"Payment Mode",-20}" +
+                            $"{"Order Date",-15}" +
+                            $"{"Delivery Date",-15}"
                         );
 
+                        Console.ForegroundColor = ConsoleColor.DarkYellow;
+                        Console.WriteLine(new string('-', 125));
+                        Console.ResetColor();
+
+                        foreach (string i in File.ReadAllLines(UserOrderFilePath))
+                        {
+                            string[] lines = i.Split(',');
+
+                            if (lines.Length < 15) continue;
+
+                            if (lines[6] == userID.ToString())
+                            {
+                                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                                Console.Write($"{lines[0],-12}");
+                                Console.ResetColor();
+
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.Write($"{lines[1],-13}");
+                                Console.ResetColor();
+
+                                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                                Console.Write($"{lines[2],-25}");
+                                Console.ResetColor();
+
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.Write($"{lines[4],-10}");
+                                Console.ResetColor();
+
+                                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                                Console.Write($"{lines[5],-14}");
+                                Console.ResetColor();
+
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.Write($"{lines[11],-20}");
+                                Console.ResetColor();
+
+                                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                                Console.Write($"{lines[13],-15}");
+                                Console.ResetColor();
+
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.WriteLine($"{lines[14],-15}");
+                                Console.ResetColor();
+                            }
+                        }
+
+                        Console.ForegroundColor = ConsoleColor.DarkYellow;
+                        Console.WriteLine(new string('-', 125));
+                        Console.ResetColor();
+
                         break;
+
+
+                    case 3:
+                        Console.ForegroundColor = ConsoleColor.Magenta;
+                        Console.WriteLine("                            You have selected option '3' to View Cart Items                            ");
+                        Console.ResetColor();
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.WriteLine("-------------------------------------------------------------------------------------------------------");
+                        Console.ResetColor();
+                        Console.WriteLine();
+
+
+
+
+
 
                     case 4:
                         Console.ForegroundColor = ConsoleColor.Magenta;
