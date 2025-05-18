@@ -1359,8 +1359,78 @@ namespace E_Commerce_RealTime_App
                         Console.ResetColor();
                         Console.WriteLine();
 
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.Magenta;
+                        Console.WriteLine("                                Here are the details of your Cart Items                                ");
+                        Console.WriteLine();
 
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.DarkGreen;
+                        Console.Write("User ID    : ");
+                        Console.ResetColor();
+                        Console.WriteLine(userID);
 
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.DarkGreen;
+                        Console.Write("User Name  : ");
+                        Console.ResetColor();
+                        Console.WriteLine(UserNameOrder);
+
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.DarkGreen;
+                        Console.Write("User Eamil : ");
+                        Console.ResetColor();
+                        Console.WriteLine(UserEmailOrder);
+                        Console.WriteLine();
+
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.DarkYellow;
+                        Console.WriteLine("-------------------------------------------------------------------------------------------------------");
+                        Console.ResetColor();
+                        Console.WriteLine(
+                            $"{"Product ID",-15}" +
+                            $"{"Product Name",-25}" +
+                            $"{"Total",-12}" +
+                            $"{"Quantity",-12}" +
+                            $"{"Total Price",-15}"
+                        );
+                        Console.ForegroundColor = ConsoleColor.DarkYellow;
+                        Console.WriteLine("-------------------------------------------------------------------------------------------------------");
+                        Console.ResetColor();
+
+                        string fileName = $"{userID}.txt";
+                        string cartFilePath = Path.Combine(User.CartDataDirectory, fileName);
+
+                        foreach(string i in File.ReadAllLines(cartFilePath))
+                        {
+                            string[] lines = i.Split(',');
+
+                            Console.ForegroundColor = ConsoleColor.DarkYellow;
+                            Console.Write($"{lines[0],-15}");
+                            Console.ResetColor();
+
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.Write($"{lines[1],-25}");
+                            Console.ResetColor();
+
+                            Console.ForegroundColor = ConsoleColor.DarkYellow;
+                            Console.Write($"{lines[2],-12}");
+                            Console.ResetColor();
+
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.Write($"{lines[3],-12}");
+                            Console.ResetColor();
+
+                            Console.ForegroundColor = ConsoleColor.DarkYellow;
+                            Console.WriteLine($"{lines[4],-15}");
+                            Console.ResetColor();
+                        }
+
+                        Console.ForegroundColor = ConsoleColor.DarkYellow;
+                        Console.WriteLine("-------------------------------------------------------------------------------------------------------");
+                        Console.ResetColor();
+
+                        break;
 
 
 
